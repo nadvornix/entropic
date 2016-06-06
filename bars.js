@@ -40,7 +40,10 @@ var shannon_size = 80;
 ///
 var entropy_line = false;
 
-
+var SELECTING = 1;
+var HOVERING = 2;
+var MODE = HOVERING;
+var selected_posses=[]
 //////
 
 
@@ -163,6 +166,16 @@ function ruler(x,y, dx, dy, unit_size, unit){
 }
 ///
 
+function select(box){
+    box.fillColor.saturation=1;
+    box.strokeColor='black';
+}
+
+function unselect(box){
+    box.fillColor.saturation=0.6;
+    box.strokeColor='grey';
+}
+
 function draw_box(x, y, width, height, id, key){
     var poss=dist[key];
     var shape_strokeColor = 'grey';
@@ -187,29 +200,56 @@ function draw_box(x, y, width, height, id, key){
     poss['plabel'] = plabel;
 
     if (id > 0){
-        line(point.x - (ruler_dist+size_of_marker), point.y, (2* size_of_marker), 0, "black");
+        poss['pmarker'] = line(point.x - (ruler_dist+size_of_marker), point.y, (2* size_of_marker), 0, "black");
+    
     }
 
     shape.onMouseEnter = function (event) {
-        event.target.fillColor.saturation=1;
-        event.target.strokeColor='black';
+        select(event.target);
+        if (MODE==SELECTING){
+            for (var i=0; i<selected_posses.length; i+=1){
+                if (selected_posses[i]['key']==key){
+                    return;
+                }
+            }
+            selected_posses.push({poss: poss, key:key, box:event.target});
+        }
+        
     };
 
     shape.onMouseLeave = function (event) {
-        event.target.fillColor.saturation=0.6;
-        event.target.strokeColor='grey';
+        if (MODE==HOVERING){
+            unselect(event.target);
+        }
     };
 
-    shape.onMouseUp = function (event) {
-        // var id = order.indexOf(key);
-        var p = poss['p'];
+
+    shape.onMouseDown = function (event) {
+        MODE=SELECTING;
+        selected_posses.push({poss: poss, key:key, box:event.target});
+    }
+
+    return shape;
+}
+
+view.onMouseDown = function (event) {
+    MODE=SELECTING;
+}
+
+view.onMouseUp = function (event) {
+    var k, key, poss, box, p;
+    if (selected_posses.length==1){
+        poss = selected_posses[0]['poss'];
+        key = selected_posses[0]['key'];
+        box = selected_posses[0]['box'];
+        p = poss['p'];
         var new_p = p / base_used;
         poss.deleteme = true;
         var new_order=[];
         var j, new_id;
 
         for (j = 0; j < base_used; j += 1) {
-            new_id = getUniqID();
+            new_id = getUniqKey();
             dist[new_id] = {p: new_p, color: randomColor()};
             new_order.push(new_id);
         }
@@ -219,11 +259,45 @@ function draw_box(x, y, width, height, id, key){
         var second_half = order.slice(id+1);
         order = first_half.concat(new_order).concat(second_half);
 
-        redraw();
+        unselect(box);
         erase(key);
-    };
-    return shape;
-}
+    }
+    else if (selected_posses.length >= 2){
+        var p_combined = 0.0;
+
+        var min_index = Infinity;
+        for (k=0; k<selected_posses.length; k+=1){
+            poss = selected_posses[k]['poss'];
+            key = selected_posses[k]['key'];
+            box = selected_posses[k]['box'];
+            p_combined += poss['p'];
+            erase(key);
+            var index = order.indexOf(key);
+            if (index<min_index){
+                min_index=index;
+            }
+
+            var i = order.indexOf(key);
+            if(i != -1) {
+                order.splice(i, 1);
+            }
+
+        }
+        var new_poss={p: p_combined, color: randomColor()};
+        var new_key = getUniqKey();
+        dist[new_key] = new_poss;
+        var left_array = order.slice(0,min_index);
+        var right_array = order.slice(min_index);
+        left_array.push(new_key);
+        left_array=left_array.concat(right_array);
+        order=left_array;
+        // debugger
+    }
+    redraw();
+
+    selected_posses=[];
+    MODE = HOVERING;
+};
 
 // function makeLeftBar(x, y, len, id){
 //     var leftBar = new Path.Line({
@@ -252,7 +326,7 @@ function draw_box(x, y, width, height, id, key){
 //         var new_order=[];
 //         var j, new_id;
 //         for (j = 0; j < base_used; j+=1) {
-//             new_id = getUniqID();
+//             new_id = getUniqKey();
 //             dist[new_id] = {p: new_p, color: randomColor()};
 //             new_order.push(new_id);
 //         }
@@ -268,12 +342,13 @@ function draw_box(x, y, width, height, id, key){
 // }
 
  
-function getUniqID(){
+function getUniqKey(){
     NEW_ID+=1;
     return NEW_ID;
 }
 
 var NEW_ID = Object.keys(dist).length;
+
 
 function erase(key){
     // better idea: first draw new, then delete old?
@@ -282,7 +357,31 @@ function erase(key){
     // poss['leftBar'].remove();
     poss['shape_total'].remove();
     poss['plabel'].remove();
+    if ('pmarker' in poss){
+        poss['pmarker'].remove();
+    }
     delete dist[key];
+}
+
+function soft_erase(key){
+    var poss = dist[key];
+    if ("shape" in poss){
+        poss['shape'].remove();
+        delete poss['shape'];
+    }
+    if ("shape_total" in poss){
+        poss['shape_total'].remove();
+        delete poss['shape_total'];
+    }
+    if ("plabel" in poss){
+        poss['plabel'].remove();
+        delete poss['plabel'];
+    }
+    if ("pmarker" in poss){
+        poss['pmarker'].remove();
+        delete poss['pmarker'];
+    }
+
 }
 
 
@@ -304,14 +403,11 @@ function redraw() {
         var height;
         var width;
 
+        soft_erase(key);
+
         entropy_width = -p * logb(2, p) * shannon_size;
         
         var shape_strokeColor = 'grey';
-
-        if ("shape_total" in poss){
-            poss['shape_total'].remove();
-            delete poss['shape_total'];
-        }
 
         // var entropy_width = -p*logb(2, p) * shannon_size;
         var point_total = new Point(bars_left_padding + total_width_so_far, total_top);
@@ -320,13 +416,17 @@ function redraw() {
         shape_total.strokeColor = shape_strokeColor;
         poss["shape_total"] = shape_total;
         total_width_so_far += entropy_width;
-
-        if (poss.drawn) {
-            height = poss['shape'].getSize().height;
-            height_so_far += height;
+        if ('shape' in poss){
             poss["shape_total"].fillColor = poss["shape"].fillColor;
-            continue;
         }
+
+
+
+        // if (poss.drawn) {
+        //     height = poss['shape'].getSize().height;
+        //     height_so_far += height;
+        //     continue;
+        // }
 
         // plot rectangles
         height = p * height_of_bars;
