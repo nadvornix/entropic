@@ -26,7 +26,7 @@ var order = [0,1,2,3]; // keys of dist
 //     '0': {p: 0.5, color:randomColor()},
 //     '1': {p: 0.5, color:randomColor()}
 // };
-var order = [0,1];
+// var order = [0,1];
 
 
 var height_of_bars = 400;
