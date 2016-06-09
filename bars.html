@@ -12,24 +12,22 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-rc1/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-rc1/jquery.min.js"></script>
     <!-- Define inlined PaperScript associate it with myCanvas -->
-    <script type="text/paperscript" src="main.js" canvas="myCanvas" />
+    <script type="text/paperscript" src="bars.js" canvas="myCanvas" />
     </script>
 </head>
 <body>
-    <canvas id="myCanvas" width="900" height="750"></canvas>
+    Base used:
     <form>
-        <select id="base">
-          <option value="2" selected>2</option>
-          <option value="2.718281828459045">e</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-          <option value="10">10</option>
-        </select>
+      <input type="number" id='base' value='2'/>
     </form>
+
+    <canvas id="myCanvas" width="900" height="750"></canvas>
 </body>
+<script type="text/javascript">
+  "use strict";  
+  $( "#base" ).change(function() {
+    window.base = Math.round(this.value);
+
+});
+</script>
 </html>

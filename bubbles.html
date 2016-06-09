@@ -1,0 +1,228 @@
+
+<html>
+<head>
+<style>
+    /*body {background-color:lightgrey;}*/
+    #l {
+    float:left;
+    width:600px;
+    /*background:#9c9;*/
+    }
+    .selected{
+        /*color:#ff0000;*/
+        background-color:#EEEEEE;
+    }
+    #r {
+        padding-left: 150px;
+        float:left;
+        width:250px;
+        /*background:#c9c;*/
+    }
+
+        canvas {background-color:beige;
+            float: left;
+        }
+        .desc {
+            position: fixed;
+            top: 500px;
+        }
+        }
+        .point {
+            font-size: 200%;
+            /*position: float;*/
+        }
+    </style>
+    <meta charset="UTF-8">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="springy/springy.js"></script>
+    <script src="springy/springyui.js"></script>
+    <script src="rgb.js"></script>
+<script type="text/javascript">
+
+
+</script>
+
+</head>
+<body>
+
+<div id='l'>
+<canvas id="myCanvas" width="640" height="480" />
+</div>
+<div id='r'>
+
+
+<strong>Total Entropy: <span id='totalentropy'></span></strong>
+<table id='enttable'>
+</table>
+<br/>
+Base used:
+<form>
+            <input type="number" id='base' value='2'/>
+    </form>
+</div>
+
+<script type="text/javascript">
+"use strict";
+
+var selected_nodes=[];
+var shifted = false;
+var base = 2;
+
+var units = {
+    2: {full: 'shannons', short: 'sh'},
+    'e': {full: 'nats', short: 'nat'},
+    3: {full: 'trits', short: 'trit'},
+    10: {full: 'hartley', short: 'Hart'},
+}
+
+$(document).on('keydown', function(e){shifted = e.shiftKey} );
+$(document).on('keyup', function(e){
+    if (selected_nodes.length > 0 && e.shiftKey != shifted){
+        // join
+        var total_prob = 0.0;
+
+
+        if (selected_nodes.length >= 2){
+            selected_nodes.forEach(function (n) {
+                total_prob += n.data.prob;
+                graph.removeNode(n);
+
+            });
+
+            graph.newNode({label: 'xxx', prob: total_prob, color: RandomColor()});
+        }
+
+
+        selected_nodes = [];
+        graph.nodes.forEach(function(n){
+            n.clicked = false;
+        });
+    }
+    shifted = e.shiftKey;
+} );
+
+function get_unit(){
+    var unit;
+    if (base in units){
+        unit = units[base]['short'];
+    }
+    else{
+        unit = base+'-its';
+    }
+    return unit
+}
+
+
+function make_table(){
+    // var entropy = total_entropy(graph);
+    // $('#totalentropy').text(entropy);
+    $('#enttable tr').remove();
+    $('#enttable').append('<tr><th></th><th>Probability</th><th> Contributed entropy</th></tr>');
+    graph.nodes.forEach(function(n){
+        var p = n.data.prob;
+        var unit = get_unit();
+        $('#enttable').append('<tr id="tr'+n.id+'"><td class="point" id="point'+n.id+'">●</td><td>'+p+'</td><td>'+ -p*logb(base, p).toFixed(6) + ' '+unit+'</td></tr>');
+        $('#point' + n.id).css("color", n.data.color);
+    });
+}
+
+
+function logb(b, x){
+    return Math.log(x) / Math.log(b);
+}
+
+function p2e(p){
+    var bits = -logb(2, p)*p;
+    return bits / logb(2, base);
+}
+
+
+var HUE=22;
+function RandomColor(){
+    var color = HSVtoRGB(HUE, 0.6, 1);
+    var r = color.r;
+    var g = color.g;
+    var b = color.b;
+
+    HUE = (HUE + 55) % 360;
+    return '#'+r.toString(16)+g.toString(16)+b.toString(16);
+
+}
+
+var graph = new Springy.Graph();
+
+// var dennis = graph.newNode({
+//     label: 'Dennis',
+//     ondoubleclick: function() { console.log("Hello!"); }
+// });
+
+var first_node = graph.newNode({label: 'Michael', prob: 1.0, color: RandomColor()});
+
+function total_entropy(){
+    var entropy=0.0;
+    graph.nodes.forEach(function(n){
+        var p = n.data.prob;
+        entropy += p2e(p);
+    });
+    return entropy;
+}
+
+
+
+jQuery(function(){
+
+    var springy = window.springy = jQuery('#myCanvas').springy({
+        graph: graph,
+        nodeSelected: function(node){
+            if (shifted){
+                node.clicked=true;
+                selected_nodes.push(node);
+            }
+            else {
+                var old_point = graph.layout.point(node);
+                var new_nodes=[];
+                var new_node;
+                var new_prob = node.data.prob / 2;
+                for (var i=0; i<base; i+=1){
+                    var p = new Springy.Vector(old_point.p.x, old_point.p.y);
+                    p.x+=4.0*Math.random()-2.0;
+                    p.y+=4.0*Math.random()-2.0;
+                    new_node = graph.newNode({label: 'Michael' + new_prob, p:p, 
+                                              prob:new_prob,
+                                              color: RandomColor()});
+                    // var point = graph.layout.point(new_node);
+                    new_nodes.push(new_node);
+                }
+                graph.removeNode(node);
+
+                update_html(); 
+
+            }
+        }
+    });
+});
+
+// $('#base').on('change', function() {
+// });
+
+
+function update_html(){
+
+    var entropy = total_entropy();
+    $('#totalentropy').text('' + entropy.toFixed(6) + ' ' + get_unit()) ;
+    make_table();
+    
+}
+
+
+$( "#base" ).change(function() {
+    base = Math.round(this.value);
+
+    update_html(); 
+});
+
+update_html(); 
+
+</script>
+</body>
+</html>

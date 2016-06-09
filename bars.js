@@ -11,7 +11,7 @@ function randomColor(){
     return (color);
 }
 
-var base_used = 2.0;
+window.base = 2.0;
 
 
 // var dist = {
@@ -176,10 +176,17 @@ function unselect(box){
     box.strokeColor='grey';
 }
 
+function humanize(x, size){
+  return x.toFixed(size).replace(/\.?0*$/,'');
+}
+
 function draw_box(x, y, width, height, id, key){
     var poss=dist[key];
     var shape_strokeColor = 'grey';
 
+    if (width<=1){
+        width=4;
+    }
     var point = new Point(x, y);
     var size = new Size(width, height);
     var shape = new Shape.Rectangle(point, size);
@@ -196,7 +203,7 @@ function draw_box(x, y, width, height, id, key){
         fontSize: 12,
         fillColor: 'black'
     });
-    plabel.content = poss['p'];
+    plabel.content = humanize(poss['p'],6);
     poss['plabel'] = plabel;
 
     if (id > 0){
@@ -243,12 +250,12 @@ view.onMouseUp = function (event) {
         key = selected_posses[0]['key'];
         box = selected_posses[0]['box'];
         p = poss['p'];
-        var new_p = p / base_used;
+        var new_p = p / window.base;
         poss.deleteme = true;
         var new_order=[];
         var j, new_id;
 
-        for (j = 0; j < base_used; j += 1) {
+        for (j = 0; j < window.base; j += 1) {
             new_id = getUniqKey();
             dist[new_id] = {p: new_p, color: randomColor()};
             new_order.push(new_id);
