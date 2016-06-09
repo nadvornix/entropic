@@ -332,7 +332,7 @@ jQuery.fn.springy = function(params) {
 				ctx.beginPath();
 				// debugger
 				var sizeOfbubble = 100;
-				ctx.arc(s.x, s.y-sizeOfbubble*node.data.prob, sizeOfbubble*node.data.prob, 0, Math.PI*2, true);  // todo: beter positions?
+				ctx.arc(s.x, s.y-sizeOfbubble*node.data.prob, sizeOfbubble*Math.sqrt(node.data.prob), 0, Math.PI*2, true);  // todo: beter positions?
 				ctx.fillStyle = node.data.color;
 				if ((nearest !== null && nearest.node !== null && nearest.node.id === node.id) ||
 					node.clicked === true) {
