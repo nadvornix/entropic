@@ -37,10 +37,6 @@
     <script src="springy/springy.js"></script>
     <script src="springy/springyui.js"></script>
     <script src="rgb.js"></script>
-<script type="text/javascript">
-
-
-</script>
 
 </head>
 <body>
@@ -101,6 +97,10 @@ $(document).on('keyup', function(e){
     shifted = e.shiftKey;
 } );
 
+function humanize(x, size){
+  return x.toFixed(size).replace(/\.?0*$/,'');
+}
+
 function get_unit(){
     var unit;
     if (base in units){
@@ -121,7 +121,7 @@ function make_table(){
     graph.nodes.forEach(function(n){
         var p = n.data.prob;
         var unit = get_unit();
-        $('#enttable').append('<tr id="tr'+n.id+'"><td class="point" id="point'+n.id+'">●</td><td>'+p+'</td><td>'+ -p*logb(base, p).toFixed(6) + ' '+unit+'</td></tr>');
+        $('#enttable').append('<tr id="tr'+n.id+'"><td class="point" id="point'+n.id+'">●</td><td>'+humanize(p, 6)+'</td><td>'+ humanize(-p*logb(base, p), 6) + ' '+unit+'</td></tr>');
         $('#point' + n.id).css("color", n.data.color);
     });
 }
@@ -182,7 +182,7 @@ jQuery(function(){
                 var old_point = graph.layout.point(node);
                 var new_nodes=[];
                 var new_node;
-                var new_prob = node.data.prob / 2;
+                var new_prob = node.data.prob / base;
                 for (var i=0; i<base; i+=1){
                     var p = new Springy.Vector(old_point.p.x, old_point.p.y);
                     p.x+=4.0*Math.random()-2.0;
